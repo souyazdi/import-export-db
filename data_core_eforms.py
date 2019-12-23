@@ -321,20 +321,6 @@ def commence_end_order(ctype:str, df:pd.DataFrame) -> list:
 
 
 
-#
-#
-#commence_end_order(application_type(formfields_by_filingId('C03237', conn0)[0]), formfields_by_filingId('C03237', conn0)[0])
-#commence_end_order(application_type(formfields_by_filingId('C03401', conn0)[0]), formfields_by_filingId('C03401', conn0)[0])
-#commence_end_order(application_type(formfields_by_filingId('C03398', conn0)[0]), formfields_by_filingId('C03398', conn0)[0])
-#commence_end_order(application_type(formfields_by_filingId('C03367', conn0)[0]), formfields_by_filingId('C03367', conn0)[0])
-#commence_end_order(application_type(formfields_by_filingId('C03358', conn0)[0]), formfields_by_filingId('C03358', conn0)[0])
-#    
-
-#if there are two rows for one filingid two things might have happened:
-#1: already the case has two RIs issued
-#2: somethings is f-ed up
-# there must be only one line in CORE
-# DECISIONITEMID must be NULL
 
 
     
