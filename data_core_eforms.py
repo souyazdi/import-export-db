@@ -176,8 +176,7 @@ def application_type(df:pd.DataFrame) -> str:
             elif light_heavy_crude_export == 'False' and refined_products_export == 'True':
                 return 'oil','lightheavycrude_export'
             elif light_heavy_crude_export == 'True' and refined_products_export == 'False':
-                return 'oil','refinedproducts_export'
-            
+                return 'oil','refinedproducts_export'      
         elif app_name == 's28_ShrtTrmHvCrd_Exprt': 
             return 'oil','heavycrude_export'
    
@@ -231,8 +230,13 @@ def comm_type_english_french(df:pd.DataFrame) -> list:
                 oil_fr = 'pétrole brut lourd'             
             return oil_en , oil_fr
         
+        if application_type(df)[0] == 'ngl':
+            ngl_en,ngl_fr = str(),str()
+            return ngl_en , ngl_fr
+        
         else:
-            return 'other comms....'
+            return ('other comms....')
+            exit
         
     except ValueError:
         return 'Value'
