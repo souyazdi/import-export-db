@@ -145,7 +145,7 @@ def rts_by_filingid(filingid:str, conn1) -> pd.DataFrame:
 ###############################################################################
 def application_type(df:pd.DataFrame) -> str:
     try:
-        #app = str()
+        #GAS
         app_name = df.Name[0]
         df_fields = df.loc[:,['ASPFieldIdName','ASPFieldIdValue']]
         if app_name == 's15ab_ShrtTrmNtrlGs_ImprtExprt':
@@ -157,12 +157,37 @@ def application_type(df:pd.DataFrame) -> str:
                 return 'gas','gas_export'
             elif gas_import == 'True' and gas_export == 'False':
                 return 'gas','gas_import'
-        else:
-            return 'this is not a gas order'
+        #NGL    
+        elif app_name == 's22_ShrtTrmNgl_Exprt':
+            propane_export = df_fields.loc[df_fields['ASPFieldIdName'] == 'chkbx_s22_ShrtTrmNgl_Exprt_Athrztns_ProductType_Propane','ASPFieldIdValue'].values[0]
+            butanes_export = df_fields.loc[df_fields['ASPFieldIdName'] == 'chkbx_s22_ShrtTrmNgl_Exprt_Athrztns_ProductType_Butanes','ASPFieldIdValue'].values[0]
+            if all(map((lambda value: value == 'True'), (propane_export,butanes_export))):
+                return 'ngl','propane_butanes_export'
+            elif propane_export == 'False' and butanes_export == 'True':
+                return 'ngl','butanes_export'
+            elif propane_export == 'True' and butanes_export == 'False':
+                return 'ngl','propane_export'
+        #OIL
+        elif app_name == 's28_ShrtTrmLghtHvCrdRfnd_Exprt':    
+            light_heavy_crude_export = df_fields.loc[df_fields['ASPFieldIdName'] == 'chkbx_s28_ShrtTrmLghtHvCrdRfnd_Exprt_Athrztns_HeavyCrude','ASPFieldIdValue'].values[0]
+            refined_products_export = df_fields.loc[df_fields['ASPFieldIdName'] == 'chkbx_s28_ShrtTrmLghtHvCrdRfnd_Exprt_Athrztns_RefinedProducts','ASPFieldIdValue'].values[0]
+            if all(map((lambda value: value == 'True'), (light_heavy_crude_export,refined_products_export))):
+                return 'oil','lightheavycrude_refinedproducts_export'
+            elif light_heavy_crude_export == 'False' and refined_products_export == 'True':
+                return 'oil','lightheavycrude_export'
+            elif light_heavy_crude_export == 'True' and refined_products_export == 'False':
+                return 'oil','refinedproducts_export'
+            
+        elif app_name == 's28_ShrtTrmHvCrd_Exprt': 
+            return 'oil','heavycrude_export'
+   
+        else:       
+            return 'this is not a gas, ngl, or oil order'
     except ValueError:
         return 'Value'
     except TypeError:
         return 'Type'
+    
 ###############################################################################  
 #           NOTE:
 ###############################################################################
@@ -178,16 +203,34 @@ def comm_type_english_french(df:pd.DataFrame) -> list:
         if application_type(df)[0] == 'gas':
             gas_en,gas_fr = str(),str()
             gas_type = df.loc[df['ASPFieldIdName'] == 'rbl_s15ab_ShrtTrmNtrlGs_ImprtExprt_Athrztns_ExportOrder_GasType','ASPFieldIdValue'].values[0]
-#            if gas_type == '1':
-#                gas_en,gas_fr = str(),str()
             if gas_type == '2':
                 gas_en = 'natural gas, in the form of Liquefied Natural Gas'
                 gas_fr = 'gaz, sous la forme de gaz naturel liquéfié seulement'
             elif gas_type == '3':
                 gas_en = 'natural gas, in the form of compressed natural gas'
-                gas_fr = 'gaz, sous la forme de gaz naturel comprimé'
-                
+                gas_fr = 'gaz, sous la forme de gaz naturel comprimé'    
             return gas_en , gas_fr
+        
+        if application_type(df)[0] == 'oil':
+            oil_en,oil_fr = str(),str()
+            oil_type = application_type(df)[1]
+            if oil_type == 'lightheavycrude_refinedproducts_export':
+                oil_en = 'light and heavy crude oil and pefined petroleum products'
+                oil_fr = 'pétrole brut léger et lourd et produits pétroliers raffinés'
+                
+            elif oil_type == 'lightheavycrude_export':
+                oil_en = 'light and heavy crude oil'
+                oil_fr = 'pétrole brut léger et lourd'
+                
+            elif oil_type == 'refinedproducts_export':
+                oil_en = 'refined petroleum products'
+                oil_fr = 'produits pétroliers raffinés'   
+                
+            elif oil_type == 'heavycrude_export':
+                oil_en = 'heavy crude oil'
+                oil_fr = 'pétrole brut lourd'             
+            return oil_en , oil_fr
+        
         else:
             return 'other comms....'
         
@@ -256,7 +299,7 @@ def add_business_days(from_date, ndays):
 #Input: index[0] of output tuple function formfileds_by_filingId(...)
 #Output: Order start and end date
 ###############################################################################              
-def commence_end_order(ctype:str, df:pd.DataFrame) -> list:
+def commence_end_order_gas(ctype:str, df:pd.DataFrame) -> list:
     export_order_commence_date = str()
     export_order_termination_date = str()
     import_order_commence_date =str()
@@ -316,8 +359,158 @@ def commence_end_order(ctype:str, df:pd.DataFrame) -> list:
         return "ERROR:commence_end_order"
         pass
 
+###############################################################################
+        #NGL
+###############################################################################
+def commence_end_order_ngl(ctype:str, df:pd.DataFrame) -> list:
+    propane_order_commence_date = str()
+    propane_order_termination_date = str()
+    butanes_order_commence_date =str()
+    butanes_order_termination_date = str()
+    propane_order_commence_date_fr = str()
+    propane_order_termination_date_fr = str()
+    butanes_order_commence_date_fr = str()
+    butanes_order_termination_date_fr = str()
+    
+    dt = df.AddedOn[0].date()
+    application_date = dt.strftime("%d %B %Y")
+    today = datetime.date.today()
+    current_year = today.year
+    
+    try:
+        if ctype[0] == 'ngl':
+            #For a period of two years less one day commencing upon approval of the Board
+            if df.loc[df['ASPFieldIdName'] == 'rbl_s22_ShrtTrmNgl_Exprt_Athrztns_ProductType_Propane','ASPFieldIdValue'].values[0] == '1':
+                #commences the day after application received date
+                p_order_commence_date = add_business_days(pd.to_datetime(application_date),1)
+                propane_order_commence_date = p_order_commence_date.strftime("%d %B %Y")
+                propane_order_commence_date_fr = date_french(propane_order_commence_date) if len(propane_order_commence_date.split()) == 3 else 'NULL'
+                
+                #until December 31st of current calander year
+                p_order_termination_date = datetime.datetime(current_year, 12, 31)
+                propane_order_termination_date = p_order_termination_date.strftime("%d %B %Y")
+                propane_order_termination_date_fr = date_french(propane_order_termination_date) if len(propane_order_termination_date.split()) == 3 else 'NULL'
+            
+            if df.loc[df['ASPFieldIdName'] == 'rbl_s22_ShrtTrmNgl_Exprt_Athrztns_ProductType_Butanes','ASPFieldIdValue'].values[0] == '1':
+                #commences the day after application received date
+                b_order_commence_date = add_business_days(pd.to_datetime(application_date),1)
+                butanes_order_commence_date = b_order_commence_date.strftime("%d %B %Y")
+                butanes_order_commence_date_fr = date_french(butanes_order_commence_date) if len(butanes_order_commence_date.split()) == 3 else 'NULL'
+                
+                #until December 31st of current calander year
+                b_order_termination_date = datetime.datetime(current_year, 12, 31)
+                butanes_order_termination_date = b_order_termination_date.strftime("%d %B %Y")
+                butanes_order_termination_date_fr = date_french(butanes_order_termination_date) if len(butanes_order_termination_date.split()) == 3 else 'NULL'
+            
+            if df.loc[df['ASPFieldIdName'] == 'rbl_s22_ShrtTrmNgl_Exprt_Athrztns_ProductType_Propane','ASPFieldIdValue'].values[0] == '2':
+                  #commnences on January 1st of next calander year
+                    p_order_commence_date = datetime.datetime(current_year+1, 1, 1)
+                    propane_order_commence_date = p_order_commence_date.strftime("%d %B %Y")
+                    propane_order_commence_date_fr = date_french(propane_order_commence_date) if len(propane_order_commence_date.split()) == 3 else 'NULL'
+                    
+                    #until December 31st of next two calander year
+                    p_order_termination_date = datetime.datetime(current_year+1, 12, 31)
+                    propane_order_termination_date = p_order_termination_date.strftime("%d %B %Y")
+                    propane_order_termination_date_fr = date_french(propane_order_termination_date) if len(propane_order_termination_date.split()) == 3 else 'NULL'                                    
+
+            if df.loc[df['ASPFieldIdName'] == 'rbl_s22_ShrtTrmNgl_Exprt_Athrztns_ProductType_Butanes','ASPFieldIdValue'].values[0] == '2':
+                  #commnences on January 1st of next calander year
+                    b_orde_commences_date = datetime.datetime(current_year+1, 1, 1)
+                    butanes_order_commence_date = b_orde_commences_date.strftime("%d %B %Y")
+                    butanes_order_commence_date_fr = date_french(butanes_order_commence_date) if len(butanes_order_commence_date.split()) == 3 else 'NULL'
+                    
+                    #until December 31st of next two calander year
+                    b_order_termination_date = datetime.datetime(current_year+1, 12, 31) 
+                    butanes_order_termination_date = b_order_termination_date.strftime("%d %B %Y")
+                    butanes_order_termination_date_fr = date_french(butanes_order_termination_date) if len(butanes_order_termination_date.split()) == 3 else 'NULL'
+                    
+        return propane_order_commence_date, propane_order_termination_date, butanes_order_commence_date, butanes_order_termination_date, propane_order_commence_date_fr, propane_order_termination_date_fr, butanes_order_commence_date_fr, butanes_order_termination_date_fr
+    
+    except:
+        return "ERROR:commence_end_order"
+        pass
+
+###############################################################################
+        #OIL
+###############################################################################
+def commence_end_order_oil(ctype:str, df:pd.DataFrame) -> list:
+    oil_order_commence_date = str()
+    oil_order_termination_date = str()
+    oil_order_commence_date_fr = str()
+    oil_order_termination_date_fr = str()
+    
+    dt = df.AddedOn[0].date()
+    application_date = dt.strftime("%d %B %Y")
+    today = datetime.date.today()
+    current_year = today.year
+    
+    try:
+        #Application for Short-Term Heavy Crude Only Export Order
+        if ctype[0] == 'oil' and ctype[1] == 'heavycrude_export':   
+            if df.loc[df['ASPFieldIdName'] == 'rbl_s28_ShrtTrmHvCrd_Exprt_Athrztns_ProductType_HeavyCrude','ASPFieldIdValue'].values[0] == '1':
+                #commences one business day after the application date
+                order_commences_date = add_business_days(pd.to_datetime(application_date),1)
+                oil_order_commence_date = order_commences_date.strftime("%d %B %Y")
+                oil_order_commence_date_fr = date_french(oil_order_commence_date) if len(oil_order_commence_date.split()) == 3 else 'NULL'
+                
+                #until December 31st of next calander year
+                order_terminates_date = datetime.datetime(current_year+1, 12, 31) 
+                oil_order_termination_date = order_terminates_date.strftime("%d %B %Y")
+                oil_order_termination_date_fr = date_french(oil_order_termination_date) if len(oil_order_termination_date.split()) == 3 else 'NULL'
+                
+            elif df.loc[df['ASPFieldIdName'] == 'rbl_s28_ShrtTrmHvCrd_Exprt_Athrztns_ProductType_HeavyCrude','ASPFieldIdValue'].values[0] == '2':
+                #commnences on January 1st of next calander year
+                order_commences_date = datetime.datetime(current_year+1, 1, 1)
+                oil_order_commence_date = order_commences_date.strftime("%d %B %Y")
+                oil_order_commence_date_fr = date_french(oil_order_commence_date) if len(oil_order_commence_date.split()) == 3 else 'NULL'
+
+                #until December 31st of next two calander year
+                order_terminates_date = datetime.datetime(current_year+2, 12, 31) 
+                oil_order_termination_date = order_terminates_date.strftime("%d %B %Y")
+                oil_order_termination_date_fr = date_french(oil_order_termination_date) if len(oil_order_termination_date.split()) == 3 else 'NULL'
+            
+        elif ctype[0] == 'oil' and ctype[1] != 'heavycrude_export':      
+            #For a period of two years less one day commencing upon approval of the Board
+            if df.loc[df['ASPFieldIdName'] == 'rbl_s28_ShrtTrmLghtHvCrdRfnd_Exprt_Athrztns_ProductType_HeavyCrude','ASPFieldIdValue'].values[0] == '1' or df.loc[df['ASPFieldIdName'] == 'rbl_s28_ShrtTrmLghtHvCrdRfnd_Exprt_Athrztns_ProductType_RefinedProducts','ASPFieldIdValue'].values[0] == '1':
+                #commences one business day after the application date
+                order_commences_date = add_business_days(pd.to_datetime(application_date),1)
+                oil_order_commence_date = order_commences_date.strftime("%d %B %Y")
+                oil_order_commence_date_fr = date_french(oil_order_commence_date) if len(oil_order_commence_date.split()) == 3 else 'NULL'
+                
+                #until December 31st of next calander year
+                order_terminates_date = datetime.datetime(current_year+1, 12, 31) 
+                oil_order_termination_date = order_terminates_date.strftime("%d %B %Y")
+                oil_order_termination_date_fr = date_french(oil_order_termination_date) if len(oil_order_termination_date.split()) == 3 else 'NULL'
+            
+            elif df.loc[df['ASPFieldIdName'] == 'rbl_s28_ShrtTrmLghtHvCrdRfnd_Exprt_Athrztns_ProductType_HeavyCrude','ASPFieldIdValue'].values[0] == '2' or df.loc[df['ASPFieldIdName'] == 'rbl_s28_ShrtTrmLghtHvCrdRfnd_Exprt_Athrztns_ProductType_RefinedProducts','ASPFieldIdValue'].values[0] == '2':
+                #commnences on January 1st of next calander year
+                order_commences_date = datetime.datetime(current_year+1, 1, 1)
+                oil_order_commence_date = order_commences_date.strftime("%d %B %Y")
+                oil_order_commence_date_fr = date_french(oil_order_commence_date) if len(oil_order_commence_date.split()) == 3 else 'NULL'
+
+                #until December 31st of next two calander year
+                order_terminates_date = datetime.datetime(current_year+1, 12, 31) 
+                oil_order_termination_date = order_terminates_date.strftime("%d %B %Y")
+                oil_order_termination_date_fr = date_french(oil_order_termination_date) if len(oil_order_termination_date.split()) == 3 else 'NULL'
+                   
+        return oil_order_commence_date, oil_order_termination_date, oil_order_commence_date_fr, oil_order_termination_date_fr
+    
+    except:
+        return "ERROR:commence_end_order"
+        pass
 
 
+
+
+
+
+
+
+#TEST    
+filingid = 'C03515'
+df_oas = formfields_by_filingId(filingid, conn0)
+ct = application_type(formfields_by_filingId(filingid,conn0)[0])
+commence_end_order_ngl(ct, df_oas[0])
 
 
 

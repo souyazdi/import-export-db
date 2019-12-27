@@ -27,6 +27,7 @@ conn1 = pyodbc.connect('Driver={SQL Server};'
                       'Database=Core;'
                       'Trusted_Connection=yes;')
 #***********************************************************************
+# GAS
 # input: filingId (livelinkId)
 # output: a list with extracted information from Core and Eforms 
 #***********************************************************************
@@ -73,7 +74,7 @@ def gas_order_data(filingid:str) -> list:
     
     type_ = list(dce.comm_type_english_french(df_oas[0]))
     
-    start_end_order_date = list(dce.commence_end_order(ctype, df_oas[0]))
+    start_end_order_date = list(dce.commence_end_order_gas(ctype, df_oas[0]))
     
     ######Service standard
     enddate = dce.add_business_days(pd.to_datetime(application_date_en),2)
@@ -84,6 +85,128 @@ def gas_order_data(filingid:str) -> list:
     list_values = [comm_type, ri, company, file_, before_the_board_date, application_date, type_, start_end_order_date, filingid, Service_Standard]
     
     return list_values
+
+#***********************************************************************
+# NGL
+# input: filingId (livelinkId)
+# output: a list with extracted information from Core and Eforms 
+#***********************************************************************
+def ngl_order_data(filingid:str) -> list: 
+    
+    df_oas = dce.formfields_by_filingId(filingid, conn0)
+    
+    df_core = dce.rts_by_filingid(filingid, conn1)
+    
+    ctype = dce.application_type(df_oas[0])
+    
+    contacts = dce.contact_info(filingid, conn0) 
+    
+    ###Assumption: form before the board on the same day
+    today = datetime.date.today()
+    # dd/mm/YY
+    today_date = today.strftime("%d %B %Y")
+    #today_date_mc = today.strftime("%d %B %Y")
+    current_year = today.year
+    month = today.strftime("%d %B %Y").split()[1]
+    before_the_board_en = r'XX ' + month + r' ' + str(current_year)
+    before_the_board_fr = r'XX ' + dce.month_to_french(month) + r' ' + str(current_year)
+    
+    if df_core[1] == 0:
+        return 'The filingid does not exist in RTS'
+        exit
+    
+    ###########################################################################
+    comm_type = dce.application_type(df_oas[0])
+    
+    ri_b = 'EBU-XXX-YYYY'
+    
+    ri_p = 'EPR-XXX-YYYY'
+
+    company = df_core[0].LegalName[0]
+    
+    file_ = df_core[0].FileNumber[0]
+    
+    before_the_board_date = [before_the_board_en,before_the_board_fr] 
+    
+    # Application date in french
+    application_date_en = df_oas[0].AddedOn[0].strftime("%d %B %Y")
+    une_demande_le_fr = dce.date_french(application_date_en)
+    application_date = [application_date_en, une_demande_le_fr]
+    
+    #type_ = list(dce.comm_type_english_french(df_oas[0]))
+    
+    start_end_order_date = list(dce.commence_end_order_ngl(ctype, df_oas[0]))
+    
+    ######Service standard
+    enddate = dce.add_business_days(pd.to_datetime(application_date_en),2)
+    #enddate = pd.to_datetime(today) + pd.DateOffset(days=2)
+    Service_Standard  = enddate.strftime("%d/%m/%Y")
+    
+
+    list_values = [comm_type, ri, company, file_, before_the_board_date, application_date, type_, start_end_order_date, filingid, Service_Standard]
+    
+    return list_values
+
+#***********************************************************************
+# OIL
+# input: filingId (livelinkId)
+# output: a list with extracted information from Core and Eforms 
+#***********************************************************************
+def oil_order_data(filingid:str) -> list: 
+    
+    df_oas = dce.formfields_by_filingId(filingid, conn0)
+    
+    df_core = dce.rts_by_filingid(filingid, conn1)
+    
+    ctype = dce.application_type(df_oas[0])
+    
+    contacts = dce.contact_info(filingid, conn0) 
+    
+    ###Assumption: form before the board on the same day
+    today = datetime.date.today()
+    # dd/mm/YY
+    today_date = today.strftime("%d %B %Y")
+    #today_date_mc = today.strftime("%d %B %Y")
+    current_year = today.year
+    month = today.strftime("%d %B %Y").split()[1]
+    before_the_board_en = r'XX ' + month + r' ' + str(current_year)
+    before_the_board_fr = r'XX ' + dce.month_to_french(month) + r' ' + str(current_year)
+    
+    if df_core[1] == 0:
+        return 'The filingid does not exist in RTS'
+        exit
+    
+    ###########################################################################
+    comm_type = dce.application_type(df_oas[0])
+    
+    ri = 'ROE-XXX-YYYY'
+
+
+    company = df_core[0].LegalName[0]
+    
+    file_ = df_core[0].FileNumber[0]
+    
+    before_the_board_date = [before_the_board_en,before_the_board_fr] 
+    
+    # Application date in french
+    application_date_en = df_oas[0].AddedOn[0].strftime("%d %B %Y")
+    une_demande_le_fr = dce.date_french(application_date_en)
+    application_date = [application_date_en, une_demande_le_fr]
+    
+    #type_ = list(dce.comm_type_english_french(df_oas[0]))
+    
+    start_end_order_date = list(dce.commence_end_order_ngl(ctype, df_oas[0]))
+    
+    ######Service standard
+    enddate = dce.add_business_days(pd.to_datetime(application_date_en),2)
+    #enddate = pd.to_datetime(today) + pd.DateOffset(days=2)
+    Service_Standard  = enddate.strftime("%d/%m/%Y")
+    
+
+    list_values = [comm_type, ri, company, file_, before_the_board_date, application_date, type_, start_end_order_date, filingid, Service_Standard]
+    
+    return list_values
+
 
 ###############################Populate forms for Natural Gas orders##############################
 # Three templates are being used here:Export Only, Import Only, ExportAndImport                  #
@@ -163,11 +286,20 @@ def populate_shortterm_app_form(filingid:str) -> str:
             
 ##########################################################################################
 
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     
-    populate_shortterm_app_form('C03401')
+    populate_shortterm_app_form('C03102')
 
-filingid = 'C03401'
+filingid = 'C03102'
 today_date = datetime.date.today().strftime("%d %B %Y")
 info_for_mailmerge = gas_order_data(filingid)   
 
@@ -175,18 +307,27 @@ info_for_mailmerge = gas_order_data('C03401')
     #Form for Export ONLY or Import ONLY orders 
 
 ####TEST
+
+os.chdir(r'H:\GitHub\import-export-db')   
+    
 contacts = dce.contact_info('A98680', conn0) 
-df_oas = dce.formfields_by_filingId('C03398', conn0)
+df_oas = dce.formfields_by_filingId(filingid, conn0)
 df_oas[0].columns
-df_core = dce.rts_by_filingid('C03398', conn1)
+df_core = dce.rts_by_filingid(filingid, conn1)
 company = df_core[0].LegalName[0]
 ctype = dce.application_type(df_oas[0])
 gas_order_data('C03367')
 dce.comm_type_english_french(df_oas[0])    
 ####################CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+os.getcwd()
+
+template = r"H:\GitHub\import-export-db\Import_Export\tmp-final\821263 - NGL NEW Orders Template ENGFR.docx"
+document = MailMerge(template)
+document.get_merge_fields()
+document.close()
 
 
-
+dce.commence_end_order_oil(ctype,df_oas[0])
 
 
 
