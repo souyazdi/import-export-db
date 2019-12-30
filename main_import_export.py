@@ -62,8 +62,8 @@ def order_data(filingid:str) -> list:
         ri = ['EPR-XXX-YYYY','EBU-XXX-YYYY']
         start_end_order_date = list(dce.commence_end_order_ngl(ctype, df_oas[0]))
     elif ctype[0] == 'gas':
-#       ri = ['GO-XXX-YYYY','GO-XXX-YYYY']
-        ri = 'GO-XXX-YYYY'
+        ri = ['GO-XXX-YYYY','GO-XXX-YYYY']
+       # ri = 'GO-XXX-YYYY'
         start_end_order_date = list(dce.commence_end_order_gas(ctype, df_oas[0]))
 
     company = df_core[0].LegalName[0]
@@ -169,6 +169,50 @@ def populate_shortterm_app_form(filingid:str) -> str:
             document.write('DL Walkaround-'+info_for_mailmerge[1]+'-'+info_for_mailmerge[2]+'-'+
                         ('Oil Export Order ENG-Duty to Panel' if i == 0 else 'Oil Export Order FR-Duty to Panel')+'.docx')
             document.close()
+        
+    #GAS        
+    if info_for_mailmerge[0][0] == 'gas':
+        list_of_templates = ['727292 - TEMPLATE - Gas Export Order_EN.docx','727292 - TEMPLATE - Gas Export Order_FR.docx',
+                             '727294 - TEMPLATE - Gas Import Order_EN.docx','727294 - TEMPLATE - Gas Import Order_FR.docx']
+        if info_for_mailmerge[0][1] == 'gas_export_import':
+            lst_tmp =  list_of_templates
+        elif info_for_mailmerge[0][1] == 'gas_export':
+            lst_tmp =  list_of_templates[0:2]
+        elif info_for_mailmerge[0][1] == 'gas_import':
+            lst_tmp =  list_of_templates[2:]
+        for i in range(0,len(lst_tmp)):
+            template_p = "Import_Export/tmp-final/New folder/"+lst_tmp[i]
+            #print(template_p)
+            document = MailMerge(template_p)
+
+            document.merge(
+                 Application_Date = info_for_mailmerge[5][0],
+                 Before__the_Bd_Date = info_for_mailmerge[4][0],
+                 Company = info_for_mailmerge[2],
+                 DEVANT___lOffice = info_for_mailmerge[4][1],
+                 #Date_Sent_to_Walkaround = ,
+                 #'EMail_Address',
+                 GO_ex = info_for_mailmerge[1][0],
+                 GO_im = info_for_mailmerge[1][1],
+                 File_ = info_for_mailmerge[3],
+                 Filing_ID = info_for_mailmerge[8],
+                 GENRE = info_for_mailmerge[6][1],
+                 #'Name1',
+                 #'Name2',
+                 Order_Commences = info_for_mailmerge[7][0] if (i%2) == 0 else info_for_mailmerge[7][2],
+                 Order_Ends = info_for_mailmerge[7][1] if (i%2) == 0 else info_for_mailmerge[7][3],
+                 en_vigueur_le =  info_for_mailmerge[7][4] if (i%2) == 0 else info_for_mailmerge[7][6],
+                 Ordre_se_termine =  info_for_mailmerge[7][5] if (i%2) == 0 else info_for_mailmerge[7][7],
+
+                 #'Salutation',
+                 TYPE = info_for_mailmerge[6][0],
+                 #'Title',
+                 une_demande__le = info_for_mailmerge[5][1] )
+            
+            document.write('DL Walkaround-'+(info_for_mailmerge[1][0] if i in [0,2] else info_for_mailmerge[1][0]) +'-'+info_for_mailmerge[2]+'-'+
+                ('Gas Export Order ENG-Duty Panel' if i == 0 else ('Gas Export Order FR-Duty Panel' if i ==1 else
+                 ('Gas Import Order ENG-Duty Panel' if i == 2 else 'Gas-Import Order FR-Duty Panel' )))+'.docx')
+            document.close()
                 
   
     
@@ -185,12 +229,11 @@ order_data(filingid)
 populate_shortterm_app_form(filingid)
 
 
-
 if __name__ == "__main__":
     
-    populate_shortterm_app_form('C03102')
+    populate_shortterm_app_form('C03236')
 
-filingid = 'C03102'
+filingid = 'C03005'
 today_date = datetime.date.today().strftime("%d %B %Y")
 info_for_mailmerge = order_data(filingid)   
 
@@ -212,7 +255,7 @@ dce.comm_type_english_french(df_oas[0])
 ####################CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 os.getcwd()
 
-template = r"H:\GitHub\import-export-db\Import_Export\tmp-final\821263 - NGL NEW Orders Template ENGFR.docx"
+template = r"H:\GitHub\import-export-db\Import_Export\tmp-final\New Folder\727292 - TEMPLATE - Gas Export Order_EN.docx"
 document = MailMerge(template)
 document.get_merge_fields()
 document.close()
@@ -228,189 +271,6 @@ document.get_merge_fields()
 filingid = 'C03492'
 order_data(filingid)
 populate_shortterm_app_form(filingid)
-
-
-#
-#################################Populate forms for orders##############################
-## Three templates are being used here:Export Only, Import Only, ExportAndImport                  #
-###################################################################################################     
-#def populate_shortterm_app_form(filingid:str) -> str:  
-#    today_date = datetime.date.today().strftime("%d %B %Y")    
-#    info_for_mailmerge = order_data(filingid)     
-#    #GAS
-#    if info_for_mailmerge[0][0] == 'gas':
-#        #Form for Export ONLY AND Import ONLY orders
-#        if info_for_mailmerge[0][1] == 'gas_export_import':
-#            template = "Import_Export/tmp-final/727296 - TEMPLATE - Gas ExportImport Orders_p.docx"
-#            document = MailMerge(template)
-#            
-#            document.merge(
-#                  Application_Date = info_for_mailmerge[5][0],
-#                  Before__the_Bd_Date = info_for_mailmerge[4][1],
-#                 Company = info_for_mailmerge[2],
-#                 DEVANT___lOffice = info_for_mailmerge[4][1],
-#                 #Date_Sent_to_Walkaround = ,
-#                 #'EMail_Address',
-#                 Export_2 = info_for_mailmerge[1],
-#                 File_ = info_for_mailmerge[3],
-#                 Filing_ID = info_for_mailmerge[8],
-#                 GENRE = info_for_mailmerge[6][1],
-#                 Import_2 = info_for_mailmerge[1],
-#                 #'Name1',
-#                 #'Name2',
-#                 Order_Commences_ex = info_for_mailmerge[7][0],
-#                 Order_Ends_ex = info_for_mailmerge[7][1],
-#                 Order_Commences_im = info_for_mailmerge[7][2],
-#                 Order_Ends_im = info_for_mailmerge[7][3] ,
-#                 en_vigueur_le_ex =  info_for_mailmerge[7][4],
-#                 Ordre_se_termine_ex =  info_for_mailmerge[7][5],
-#                 en_vigueur_le_im =  info_for_mailmerge[7][6] ,
-#                 Ordre_se_termine_im =  info_for_mailmerge[7][7] ,
-#                 #'Salutation',
-#                 TYPE = info_for_mailmerge[6][0],
-#                 #'Title',
-#                 une_demande__le = info_for_mailmerge[5][1] )
-#            
-#            document.write(filingid+'_'+info_for_mailmerge[3]+'_'+today_date+'.docx')
-#            document.close()
-#            
-#        elif info_for_mailmerge[0][1] in ['gas_export','gas_import']:
-#            gtype = info_for_mailmerge[0][1]
-#            if gtype == 'gas_export':
-#                template = "Import_Export/tmp-final/727292 - TEMPLATE - Gas Export Order.docx"
-#            elif gtype == 'gas_import':
-#                template = "Import_Export/tmp-final/727294 - TEMPLATE - Gas Import Order.docx"
-#            
-#            document = MailMerge(template)
-#            
-#            document.merge(
-#                 Application_Date = info_for_mailmerge[5][0],
-#                 Before__the_Bd_Date = info_for_mailmerge[4][1],
-#                 Company = info_for_mailmerge[2],
-#                 DEVANT___lOffice = info_for_mailmerge[4][1],
-#                 #Date_Sent_to_Walkaround = ,
-#                 #'EMail_Address',
-#                 Export_1 = info_for_mailmerge[1],
-#                 Import_1 = info_for_mailmerge[1],
-#                 File_ = info_for_mailmerge[3],
-#                 Filing_ID = info_for_mailmerge[8],
-#                 GENRE = info_for_mailmerge[6][1],
-#                 #'Name1',
-#                 #'Name2',
-#                 Order_Commences = info_for_mailmerge[7][0] if gtype == 'gas_export' else info_for_mailmerge[7][2],
-#                 Order_Ends = info_for_mailmerge[7][1] if gtype == 'gas_export' else info_for_mailmerge[7][3],
-#                 en_vigueur_le =  info_for_mailmerge[7][4] if gtype == 'gas_export' else info_for_mailmerge[7][6],
-#                 Ordre_se_termine =  info_for_mailmerge[7][5] if gtype == 'gas_export' else info_for_mailmerge[7][7],
-#                 #'Salutation',
-#                 TYPE = info_for_mailmerge[6][0],
-#                 #'Title',
-#                 une_demande__le = info_for_mailmerge[5][1] )
-#            
-#            document.write(filingid+'_'+info_for_mailmerge[3]+'_'+today_date+'.docx')
-#            document.close()
-#    #NGL        
-#    elif info_for_mailmerge[0][0] == 'ngl':
-#        if info_for_mailmerge[0][1] == 'propane_butanes_export':
-#            template = "Import_Export/tmp-final/821263 - NGL NEW Orders Template ENGFR.docx"
-#            document = MailMerge(template)
-#            document.get_merge_fields()
-#            document.merge(
-#                 Application_Date = info_for_mailmerge[5][0],
-#                 Before__the_Bd_Date = info_for_mailmerge[4][0],
-#                 Company = info_for_mailmerge[2],
-#                 DEVANT___lOffice = info_for_mailmerge[4][1],
-#                 #Date_Sent_to_Walkaround = ,
-#                 #'EMail_Address',
-#                 Propane_Order = info_for_mailmerge[1][0],
-#                 File_ = info_for_mailmerge[3],
-#                 Filing_ID = info_for_mailmerge[8],
-#                 GENRE = info_for_mailmerge[6][1],
-#                 Butanes_Order = info_for_mailmerge[1][1],
-#                 #'Name1',
-#                 #'Name2',
-#                 Order_Commences_p = info_for_mailmerge[7][0],
-#                 Order_Ends_p = info_for_mailmerge[7][1],
-#                 Order_Commences_b = info_for_mailmerge[7][2],
-#                 Order_Ends_b = info_for_mailmerge[7][3] ,
-#                 en_vigueur_le_p =  info_for_mailmerge[7][4],
-#                 prend_fin_le_p =  info_for_mailmerge[7][5],
-#                 en_vigueur_le_b =  info_for_mailmerge[7][6] ,
-#                 prend_fin_le_b =  info_for_mailmerge[7][7] ,
-#                 #'Salutation',
-#                 TYPE = info_for_mailmerge[6][0],
-#                 #'Title',
-#                 une_demande__le = info_for_mailmerge[5][1] )
-#            
-#            document.write(filingid+'_'+info_for_mailmerge[3]+'_'+today_date+'.docx')
-#            document.close()
-#            
-#        elif info_for_mailmerge[0][1] in ['propane_export','butanes_export']:
-#            gtype = info_for_mailmerge[0][1]
-#            if gtype == 'propane_export':
-#                template = "Import_Export/tmp-final/821263 - NGL NEW Orders Template ENGFR_Propane_Only.docx"
-#            elif gtype == 'butanes_export':
-#                template = "Import_Export/tmp-final/821263 - NGL NEW Orders Template ENGFR_Butanes_Only.docx"
-#            
-#            document = MailMerge(template)
-#            
-#            document.merge(
-#                 Application_Date = info_for_mailmerge[5][0],
-#                 Before__the_Bd_Date = info_for_mailmerge[4][0],
-#                 Company = info_for_mailmerge[2],
-#                 DEVANT___lOffice = info_for_mailmerge[4][1],
-#                 #Date_Sent_to_Walkaround = ,
-#                 #'EMail_Address',
-#                 Propane_Order = info_for_mailmerge[1][0],
-#                 File_ = info_for_mailmerge[3],
-#                 Filing_ID = info_for_mailmerge[8],
-#                 GENRE = info_for_mailmerge[6][1],
-#                 Butanes_Order = info_for_mailmerge[1][1],
-#                 #'Name1',
-#                 #'Name2',
-#                 Order_Commences = info_for_mailmerge[7][0] if gtype == 'propane_export' else info_for_mailmerge[7][2],
-#                 Order_Ends = info_for_mailmerge[7][1] if gtype == 'propane_export' else info_for_mailmerge[7][3],
-#                 en_vigueur_le =  info_for_mailmerge[7][4] if gtype == 'propane_export' else info_for_mailmerge[7][6],
-#                 prend_fin_le =  info_for_mailmerge[7][5] if gtype == 'propane_export' else info_for_mailmerge[7][7],
-#                 #'Salutation',
-#                 TYPE = info_for_mailmerge[6][0],
-#                 #'Title',
-#                 une_demande__le = info_for_mailmerge[5][1] )
-#            
-#            document.write(filingid+'_'+info_for_mailmerge[3]+'_'+today_date+'.docx')
-#            document.close()
-#    #OIL      
-#    elif info_for_mailmerge[0][0] == 'oil':
-#        template = "Import_Export/tmp-final/847779 - Template  - New Applications - Crude Oil_.docx"
-#        document = MailMerge(template)
-#        
-#        document.merge(
-#            Application_Receipt_Date = info_for_mailmerge[5][0],
-#            Before_the_Commission = info_for_mailmerge[4][1],
-#            Company = info_for_mailmerge[2],
-#            Devant_lOffice = info_for_mailmerge[4][1],
-#            #Date_Sent_to_Walkaround = ,
-#            #'EMail_Address',
-#            ROE_ = info_for_mailmerge[1],
-#            File_ = info_for_mailmerge[3],
-#            Filing_ID = info_for_mailmerge[8],
-#            GENRE = info_for_mailmerge[6][1],
-#            #'Name1',
-#            #'Name2',
-#            Order_Commences = info_for_mailmerge[7][0],
-#            Order_Terminates = info_for_mailmerge[7][1],
-#            En_vigueur_le =  info_for_mailmerge[7][2],
-#            Prendra_fin_le =  info_for_mailmerge[7][3],
-#            #'Salutation',
-#            TYPE = info_for_mailmerge[6][0],
-#            #'Title',
-#            Une_demande_le = info_for_mailmerge[5][1] )
-#            
-#        document.write(filingid+'_'+info_for_mailmerge[3]+'_'+today_date+'.docx')
-#        document.close()
-#        
-#
-###########################################################################################
-
 
 
 

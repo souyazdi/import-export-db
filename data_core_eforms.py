@@ -510,105 +510,10 @@ def commence_end_order_oil(ctype:str, df:pd.DataFrame) -> list:
 
 
 
-#TEST    
-filingid = 'C03515'
-df_oas = formfields_by_filingId(filingid, conn0)
-ct = application_type(formfields_by_filingId(filingid,conn0)[0])
-commence_end_order_ngl(ct, df_oas[0])
 
 
 
 
-
-    
-def query_oas_commodity(comtype:str) -> str:
-    if comtype.lower() == "gas":
-        text = "\'s15ab_ShrtTrmNtrlGs_ImprtExprt\'"
-        query_gas = "SELECT f.[FormId]\
-        ,[Name]\
-        ,[FilingId]\
-        ,[ASPFieldIdName]\
-        ,[ASPFieldIdValue]\
-        FROM [Eforms].[dbo].[Form] f\
-        JOIN [FormField] ff\
-        ON f.FormId = ff.FormId\
-        WHERE FilingId IS NOT NULL AND [Name] = {}\
-        ORDER BY ff.FormId DESC".format(text)
-    return query_gas
-
-  
-df_gas = pd.read_sql(query_oas_commodity('gas'),conn0)
-df_gas = df_gas.sort_values(by=['FormId'], ascending = False)  
-    
-
-query = 'SELECT * \
-    FROM\
-    (\
-    	SELECT f.[FileId], f.[ParentFileId],f.[FileNumber],f.[RecordsTitle],f.[RecordsDescription],\
-    	a.[ActivityId],a.[EnglishTitle],a.[FrenchTitle],a.[Description] ActivityDescription,a.[ApplicationDate],a.[ReceivedDate],a.[ExpectedCompletionDate],a.[InternalProjectFlag],a.[StatusId],a.[CompletedDate],a.[DeactivationDate] ActivityDeactivationDate,a.[LegacyProjectXKey],a.[LetterForCommentFlag],a.[LetterForCommentExpireDate],a.[BusinessUnitId],a.[FederalLandId],a.[DecisionOnCompleteness],a.[EnglishProjectShortName],a.[FrenchProjectShortName],a.[FrenchDescription] FrenchDescriptionOfActivity,\
-        aa.[ActivityAttachmentId] ,aa.[LivelinkCompoundDocumentId],\
-    	be.[BoardEventId] ,be.[NextTimeToBoard] ,be.[PurposeId],be.[Description],be.[PrimaryContactId],be.[SecondaryContactId] ,be.[LegacySummaryXKey],be.[FrenchDescription] FrenchDescriptionOfBoardEvent,\
-    	di.[DecisionItemId],di.[DecisionItemStatusId],di.[RegulatoryInstrumentNumber],di.[IssuedDate],di.[EffectiveDate],di.[ExpireDate],di.[SunsetDate],di.[IssuedToNonRegulatedCompanyFlag],di.[LetterOnly],di.[Comments],di.[LegacyRegulatoryInstrumentXKey],di.[AddedBy],di.[AddedOn],di.[ModifiedBy],di.[ModifiedOn],di.[WalkaroundFolderId],di.[BoardDecisionDate],di.[ReasonForCancelling],di.[GicApproval],di.[SentToMinisterDate],di.[MinisterToPrivyCouncilOfficeDate],di.[PrivyCouncilOfficeApprovalNumber],di.[PrivyCouncilOfficeApprovalDate],di.[RegulatoryOfficerAssignedId],di.[IsNGLLicence],di.[FrenchComments],\
-    	fc.[FileCompanyId] ,fc.[CompanyId],\
-    	c.[CompanyId] CompanyIdC,c.[CompanyCode] ,c.[LegalName],c.[InPID],c.[InXING],c.[LegacyCompanyXKey] ,c.[DeactivationDate],c.[IsGroup1]\
-    	FROM [Regulatory_Untrusted].[_Core].[File] f\
-    	JOIN [Regulatory_Untrusted].[_Core].[Activity] a\
-    	ON f.FileId = a.FileId\
-    	JOIN [Regulatory_Untrusted].[_Core].[ActivityAttachment] aa\
-    	ON a.ActivityId = aa.ActivityId\
-    	FULL JOIN [Regulatory_Untrusted].[_Core].[BoardEvent] be\
-    	ON be.ActivityId = a.ActivityId\
-    	FULL JOIN [Regulatory_Untrusted].[_Core].[DecisionItem] di\
-    	ON be.BoardEventId = di.BoardEventId\
-    	JOIN [Regulatory_Untrusted].[_Core].[FileCompany] fc \
-    	ON fc.FileId = a.FileId \
-    	JOIN [Regulatory_Untrusted].[_Core].[Company] c \
-    	ON c.CompanyId = fc.CompanyId \
-    ) as core\
-    JOIN\
-    (\
-    	SELECT f.[FormId],f.[Name] Form_Name,f.[FilingId], f.[AddedOn] FileAddedOn, ff.[FormFieldId],ff.[ASPFieldIdName],ff.[ASPFieldIdValue]\
-    	,c.[ContactId],c.[ContactTypeId],c.[FirstName],c.[LastName],c.[Salutation],c.[Title],c.[Role],c.[Organization],c.[Email],c.[CountryId],c.[ProvinceId],c.[Address],c.[City],c.[PostalCode],c.[PhoneNumber],c.[PhoneExt],c.[FaxNumber],c.[AddedBy],c.[AddedOn],c.[ModifiedBy],c.[ModifiedOn],c.[CountryOther],c.[ProvinceOther],\
-    	cnt.[Name],p.[Name] ProvinceName, p.[NameFR], p.[Abbreviation]\
-    	FROM [Regulatory_Untrusted].[_Eforms].[Form] f \
-    	JOIN [Regulatory_Untrusted].[_Eforms].[FormField] ff \
-    	ON f.FormId = ff.FormId \
-    	JOIN [Regulatory_Untrusted].[_Eforms].[Contact] c\
-    	ON f.FormId = c.FormId\
-    	JOIN [Regulatory_Untrusted].[_Eforms].[ContactType] ct\
-    	ON ct.ContactTypeId = c.ContactTypeId\
-    	JOIN [Regulatory_Untrusted].[_Eforms].[Country] cnt\
-    	ON cnt.CountryId = c.CountryId\
-    	JOIN [Regulatory_Untrusted].[_Eforms].[Province] p\
-    	ON c.ProvinceId = p.ProvinceId\
-    ) as oas\
-    ON core.LivelinkCompoundDocumentId = oas.FilingId WHERE oas.FilingId IS NOT NULL \
-    ORDER BY core.IssuedDate Desc , core.DecisionItemId Desc'
-   
-
-#q = '''SELECT * FROM [B-06803].[OASImportExportContact] WHERE FormId = ? '''
-#cursor.execute(q,4827)
-#row = cursor.fetchall()
-#df = pd.DataFrame(zip(row))
-    
-def view():
-    df1 = pd.read_sql(query,conn)
-    df1.sort_values(by=['IssuedDate','DecisionItemId'], ascending = False)
-    df1 = df1[0:40]
-    return df1
-
-def form_contacts(fid):
-    cursor.execute(q,fid)
-    row = cursor.fetchall()
-    df = pd.DataFrame(row)
-    return df
-
-
-def view_gener(conn, q):
-    df1 = pd.read_sql(q,conn)
-    df1.sort_values(by=['ReceivedDate','DecisionItemId'], ascending = False)
-    df1 = df1[0:40]
-    return df1
 
 
 
