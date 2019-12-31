@@ -10,9 +10,13 @@ import os
 import datetime
 import pandas as pd
 from mailmerge import MailMerge
-import mailmerge
 import data_core_eforms as dce
 import pyodbc
+
+
+from win32com.client import Dispatch
+
+
 
 os.chdir(r'H:\GitHub\import-export-db')
 os.getcwd()
@@ -91,9 +95,10 @@ def order_data(filingid:str) -> list:
 ##############################################################################################################################################################
 ##############################################################################################################################################################
 ##############################################################################################################################################################
-def populate_shortterm_app_form(filingid:str) -> str:  
-    today_date = datetime.date.today().strftime("%d %B %Y")    
+def populate_shortterm_app_form(filingid:str) -> list:  
+    file_names = list()
     info_for_mailmerge = order_data(filingid) 
+    
     #NGL        
     if info_for_mailmerge[0][0] == 'ngl':
         list_of_templates = ['821263 - NGL NEW Orders Template_Propane_Only_EN.docx','821263 - NGL NEW Orders Template_Propane_Only_FR.docx',
@@ -133,9 +138,11 @@ def populate_shortterm_app_form(filingid:str) -> str:
                  #'Title',
                  une_demande__le = info_for_mailmerge[5][1] )
             
-            document.write('DL Walkaround-'+(info_for_mailmerge[1][0] if i in [0,2] else info_for_mailmerge[1][0]) +'-'+info_for_mailmerge[2]+'-'+
-                ('Propane Export Order ENG-Duty Panel' if i == 0 else ('Butanes Export Order ENG-Duty Panel' if i ==1 else
-                 ('Propane Export Order FR-Duty Panel' if i == 2 else 'Butanes Export Order FR-Duty Panel' )))+'.docx')
+            file_name = 'DL Walkaround-'+(info_for_mailmerge[1][0] if i in [0,2] else info_for_mailmerge[1][0]) +'-'+info_for_mailmerge[2]+'-'+('Propane Export Order ENG-Duty Panel' if i == 0 else ('Butanes Export Order ENG-Duty Panel' if i ==1 else ('Propane Export Order FR-Duty Panel' if i == 2 else 'Butanes Export Order FR-Duty Panel' )))+'.docx'
+
+            file_names.append(os.path.abspath(file_name))
+            
+            document.write(file_name)
             document.close()
     #OIL
     elif info_for_mailmerge[0][0] == 'oil':
@@ -166,12 +173,15 @@ def populate_shortterm_app_form(filingid:str) -> str:
                 #'Title',
                 Une_demande_le = info_for_mailmerge[5][1] )
                 
-            document.write('DL Walkaround-'+info_for_mailmerge[1]+'-'+info_for_mailmerge[2]+'-'+
-                        ('Oil Export Order ENG-Duty to Panel' if i == 0 else 'Oil Export Order FR-Duty to Panel')+'.docx')
+            file_name = 'DL Walkaround-'+info_for_mailmerge[1]+'-'+info_for_mailmerge[2]+'-'+('Oil Export Order ENG-Duty to Panel' if i == 0 else 'Oil Export Order FR-Duty to Panel')+'.docx'
+            
+            file_names.append(os.path.abspath(file_name))
+            
+            document.write(file_name)
             document.close()
         
     #GAS        
-    if info_for_mailmerge[0][0] == 'gas':
+    elif info_for_mailmerge[0][0] == 'gas':
         list_of_templates = ['727292 - TEMPLATE - Gas Export Order_EN.docx','727292 - TEMPLATE - Gas Export Order_FR.docx',
                              '727294 - TEMPLATE - Gas Import Order_EN.docx','727294 - TEMPLATE - Gas Import Order_FR.docx']
         if info_for_mailmerge[0][1] == 'gas_export_import':
@@ -209,12 +219,48 @@ def populate_shortterm_app_form(filingid:str) -> str:
                  #'Title',
                  une_demande__le = info_for_mailmerge[5][1] )
             
-            document.write('DL Walkaround-'+(info_for_mailmerge[1][0] if i in [0,2] else info_for_mailmerge[1][0]) +'-'+info_for_mailmerge[2]+'-'+
-                ('Gas Export Order ENG-Duty Panel' if i == 0 else ('Gas Export Order FR-Duty Panel' if i ==1 else
-                 ('Gas Import Order ENG-Duty Panel' if i == 2 else 'Gas-Import Order FR-Duty Panel' )))+'.docx')
+            file_name = 'DL Walkaround-'+(info_for_mailmerge[1][0] if i in [0,2] else info_for_mailmerge[1][0]) +'-'+info_for_mailmerge[2]+'-'+('Gas Export Order ENG-Duty Panel' if i == 0 else ('Gas Export Order FR-Duty Panel' if i ==1 else ('Gas Import Order ENG-Duty Panel' if i == 2 else 'Gas-Import Order FR-Duty Panel' )))+'.docx'
+            
+            file_names.append(os.path.abspath(file_name))
+            
+            document.write(file_name)
             document.close()
+            
+    return file_names
                 
   
+    
+ 
+    
+def email_to_RO(filingid:str) -> str:
+    
+    f_name = populate_shortterm_app_form(filingid) 
+    
+    outlook = Dispatch('outlook.application')
+    mail = outlook.CreateItem(0)
+    
+    id_  = "90909090"
+    
+    itm = "TRY THIS 000"
+    
+    ha = "AND THIS"
+    
+    msg =  """From: %s\r\nTo: %s\r\nSubject: %s\r\n""" % (id_, itm , ha)
+    
+    
+    
+    mail.To = 'data_design_analytics@cer-rec.gc.ca'
+    mail.Subject = 'This is test # 2 to dispatch emails with attachments'
+    mail.Body = msg
+    #mail.HTMLBody = '<h2>HTML Message body</h2>' #this field is optional
+    
+    # To attach a file to the email (optional):
+    attachment  = r"H:\GitHub\import-export-db\Import_Export\tmp-final\New folder\email_to_walkaround_oil.docx"
+    mail.Attachments.Add(attachment)
+    
+    mail.Send()
+
+    
     
     
     
