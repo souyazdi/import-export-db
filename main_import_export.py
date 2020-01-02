@@ -43,12 +43,10 @@ def order_data(filingid:str) -> list:
     
     ctype = dce.application_type(df_oas[0])
     
-    contacts = dce.contact_info(filingid, conn0) 
-    
     ###Assumption: form before the board on the same day
     today = datetime.date.today()
     # dd/mm/YY
-    today_date = today.strftime("%d %B %Y")
+    #today_date = today.strftime("%d %B %Y")
     #today_date_mc = today.strftime("%d %B %Y")
     current_year = today.year
     month = today.strftime("%d %B %Y").split()[1]
@@ -93,7 +91,9 @@ def order_data(filingid:str) -> list:
     return list_values
 
 ##############################################################################################################################################################
-##############################################################################################################################################################
+#input: filingid
+#output: populate the english and french version of orders and save them in the working directory by following
+#the naming convention that is introduced by Tolls and Tariffs 
 ##############################################################################################################################################################
 def populate_shortterm_app_form(filingid:str) -> list:  
     file_names = list()
@@ -228,38 +228,76 @@ def populate_shortterm_app_form(filingid:str) -> list:
             
     return file_names
                 
-  
-    
- 
-    
+##############################################################################################################################################################
+#input: filingid
+#output:email sent to the identified Distribution List with english and french versions of the order as the attachment
+#the email body takes valiables which change by each application
+##############################################################################################################################################################
 def email_to_RO(filingid:str) -> str:
     
-    f_name = populate_shortterm_app_form(filingid) 
+    msg = str()
+    rts_decision = str()
+    f_names = populate_shortterm_app_form(filingid) 
+    app_info = order_data(filingid)
     
     outlook = Dispatch('outlook.application')
     mail = outlook.CreateItem(0)
     
-    id_  = "90909090"
+    #fill the email body with following information: filingid, name of the company, 
+    #contact information of the applicant, date of the service standard
+    filing_id  = filingid
+    company = app_info[2]
+    service_standard = app_info[9]
+    contacts = dce.contact_info(filingid,conn0)
     
-    itm = "TRY THIS 000"
+    #top part of the email body before contact information    
+    msg_body = """<html><body><p>Good morning/afternoon,<br><br><br>Attached is an order for Walkarounds.\
+    <br><br>By application e-filed<b> %s</b>, <b>%s</b> has filed an application pursuant to subparagraph 15(a)(i) and section 16 of the National Energy Board Act,\
+    Part VI (Oil and Gas) Regulations for a short-term export order under the policy guidelines.The Energy Adjudication Business Unit, Tolls and Tariffs Adjudication Team, recommends that the Commission approve the request and grant the order.</br></br>
+    <br><br><b>
+    NOTE: A 2- Business day service standard applies. In order to meet our service standard, this needs to be processed by COB on %s.</br></br></b>
+
+    </p></html>""" % (filing_id,company,service_standard)
     
-    ha = "AND THIS"
     
-    msg =  """From: %s\r\nTo: %s\r\nSubject: %s\r\n""" % (id_, itm , ha)
+    msg = msg_body + msg
     
+    #Contact information
+    for i in range(0,len(contacts)):
+        msg_ =  """<html><body><u><b>%s:</p></u></b>%s %s %s<br>%s</br><br>%s</br><br>%s</br><br><br></html>""" % (contacts.loc[i][1], contacts.loc[i][6] , contacts.loc[i][4], contacts.loc[i][5],contacts.loc[i][7],contacts.loc[i][8],contacts.loc[i][9])
+        msg = msg +''+ msg_
+
+    #Ending part of the email
+    msg_ending = """<html><body><b><u>RTS<br>
+    The RTS link will be provided by the Data Management Team.<br><br>
+    
+    OR,</b></u><br><br>
+    
+    RTS screens have been completed and regulatory instrument number(s) have been generated in RTS.  Upon Commission’s approval the RTS Decision Item screen needs to be completed by the Office of the Secretary.  To access directly the RTS Decision Items please click here: %s.<br><br>
+    
+    Thank you,</html>""" % (rts_decision)
+    
+    msg = msg + msg_ending    
     
     
     mail.To = 'data_design_analytics@cer-rec.gc.ca'
     mail.Subject = 'This is test # 2 to dispatch emails with attachments'
-    mail.Body = msg
-    #mail.HTMLBody = '<h2>HTML Message body</h2>' #this field is optional
-    
+   # mail.Body = msg
+    mail.HTMLBody = msg
+   
     # To attach a file to the email (optional):
-    attachment  = r"H:\GitHub\import-export-db\Import_Export\tmp-final\New folder\email_to_walkaround_oil.docx"
-    mail.Attachments.Add(attachment)
+    for i in range(0,len(f_names)):
+        attachment  = f_names[i]
+        mail.Attachments.Add(attachment)
     
     mail.Send()
-
+        
+    
+    
+    
+    
+    
+    
     
     
     
@@ -271,6 +309,9 @@ def email_to_RO(filingid:str) -> str:
 ##############################################################################################################################################################
 ##############################################################################################################################################################
 filingid = 'C03707'
+email_to_RO(filingid)
+
+
 order_data(filingid)
 populate_shortterm_app_form(filingid)
 
@@ -279,7 +320,7 @@ if __name__ == "__main__":
     
     populate_shortterm_app_form('C03236')
 
-filingid = 'C03005'
+
 today_date = datetime.date.today().strftime("%d %B %Y")
 info_for_mailmerge = order_data(filingid)   
 

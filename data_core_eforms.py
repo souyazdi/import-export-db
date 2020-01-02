@@ -93,6 +93,7 @@ def contact_info(filingid:str, conn0) -> pd.DataFrame:
     ON Province.ProvinceId = c.ProvinceId WHERE FormId = (SELECT FormId FROM [Eforms].[dbo].[Form] WHERE FilingId = \'{}\')".format(filingid)
     df_fid = pd.read_sql(query,conn0)
     return df_fid
+
 ###############################################################################
 ###############################################################################
 #Input: FilingId of the application + the pyodbc object 
