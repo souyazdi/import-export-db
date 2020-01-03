@@ -231,7 +231,7 @@ def populate_shortterm_app_form(filingid:str) -> list:
 ##############################################################################################################################################################
 #input: filingid
 #output:email sent to the identified Distribution List with english and french versions of the order as the attachment
-#the email body takes valiables which change by each application
+#the email body takes valiables which change by each application specifications
 ##############################################################################################################################################################
 def email_to_RO(filingid:str) -> str:
     
@@ -294,75 +294,13 @@ def email_to_RO(filingid:str) -> str:
         
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-#***********************************************TEST**************************     
-##############################################################################################################################################################
-##############################################################################################################################################################
-##############################################################################################################################################################
-filingid = 'C03707'
-email_to_RO(filingid)
+ 
 
-
-order_data(filingid)
-populate_shortterm_app_form(filingid)
+    
+    
+#*************************************TEST**************************     
 
 
 if __name__ == "__main__":
-    
-    populate_shortterm_app_form('C03236')
-
-
-today_date = datetime.date.today().strftime("%d %B %Y")
-info_for_mailmerge = order_data(filingid)   
-
-info_for_mailmerge = order_data(filingid)    
-    #Form for Export ONLY or Import ONLY orders 
-
-####TEST
-order_data(filingid)
-os.chdir(r'H:\GitHub\import-export-db')   
-    
-contacts = dce.contact_info('A98680', conn0) 
-df_oas = dce.formfields_by_filingId(filingid, conn0)
-df_oas[0].columns
-df_core = dce.rts_by_filingid(filingid, conn1)
-company = df_core[0].LegalName[0]
-ctype = dce.application_type(df_oas[0])
-order_data('C03367')
-dce.comm_type_english_french(df_oas[0])    
-####################CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-os.getcwd()
-
-template = r"H:\GitHub\import-export-db\Import_Export\tmp-final\New Folder\727292 - TEMPLATE - Gas Export Order_EN.docx"
-document = MailMerge(template)
-document.get_merge_fields()
-document.close()
-
-
-dce.commence_end_order_oil(ctype,df_oas[0])
-
-populate_shortterm_app_form(filingid)
-template = "Import_Export/tmp-final/847779 - Template  - New Applications - Crude Oil_.docx"
-document = MailMerge(template)
-document.get_merge_fields()
-
-filingid = 'C03492'
-order_data(filingid)
-populate_shortterm_app_form(filingid)
-
-
-
-
-
-
-
-
+    filingid = 'C03707'
+    email_to_RO(filingid) 

@@ -26,16 +26,6 @@ conn1 = pyodbc.connect('Driver={SQL Server};'
                       'Database=Core;'
                       'Trusted_Connection=yes;')
 
-#cursor = conn.cursor()
-
-
-#query_gas = "SELECT [FormId]\
-#      ,[Name]\
-#      ,[FilingId]\
-#      ,[AddedOn]\
-#  FROM [Eforms].[dbo].[Form]\
-#  WHERE FilingID IS NOT NULL AND [Name] = N's15ab_ShrtTrmNtrlGs_ImprtExprt'\
-#  ORDER BY FormId DESC"
 
 ###############################################################################
 #This function accepts the filigid of the application + the pyodbc object 
